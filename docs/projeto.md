@@ -413,58 +413,21 @@ O comando acima criará um arquivo chamado `~/.aws/credentials` em seu sistema. 
 cat ~/.aws/credentials
 ```
 
-Depois de configurar suas credenciais de acesso, você pode configurar o Terraform. Para isso, você precisa criar um arquivo chamado `main.tf` e adicionar o seguinte conteúdo:
+Depois de configurar suas credenciais de acesso, você pode configurar o Terraform. Para isso, vamos criar um diretório chamado `terraform` e dentro dele vamos criar os seguintes arquivos:
+
+- `provider.tf` - Arquivo de configuração do provedor.
+- `ec2.tf` - Arquivo de configuração da instância EC2.
+- `cloudwatch.tf` - Arquivo de configuração do alarme do CloudWatch.
 
 ::: tip Dica
 Caso você utiliza o vscode, você pode instalar a extensão [HashiCorp Terraform](https://marketplace.visualstudio.com/items?itemName=HashiCorp.terraform) para ter suporte a sintaxe do Terraform.
 :::
 
-```bash
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.16"
-    }
-  }
+::: tip Dica
+Os nomes dos arquivos não são importantes, mas é uma boa prática nomeá-los de acordo com o recurso que eles definem. Por exemplo, `ec2.tf` define um recurso EC2.
+:::
 
-  required_version = ">= 1.2.0"
-}
-
-provider "aws" {
-  region  = "us-east-1"
-}
-
-resource "aws_instance" "app_server" {
-  ami           = "ami-0fc61db8544a617ed"
-  instance_type = "t2.medium"
-
-  tags = {
-    Name = "InstanciaTerraform"
-  }
-}
-```
-
-A primeira seção do código:
-
-```bash
-terraform {
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 4.16"
-    }
-  }
-
-  required_version = ">= 1.2.0"
-}
-```
-
-define as configurações do Terraform. O bloco `required_providers` especifica que o provedor AWS da HashiCorp é necessário para executar este plano de implantação. O provedor é baixado pelo Terraform durante a execução do plano. A versão ~> 4.16 especifica que o provedor deve ser pelo menos da versão 4.16, mas não deve ser superior à versão 5.0.0.
-
-O bloco `required_version` define a versão mínima do Terraform necessária para executar o plano. Neste exemplo, a versão mínima é 1.2.0.
-
-A segunda seção do código:
+Detro do arquivo `provider.tf`, você pode adicionar o seguinte código:
 
 ```bash
 provider "aws" {
@@ -472,14 +435,15 @@ provider "aws" {
 }
 ```
 
-define o provedor AWS a ser usado para criar os recursos. O `region` especifica a região da AWS onde a instância EC2 será criada. Neste exemplo, a instância EC2 será criada na região `US East (N. Virginia)`.
+Ele define o provedor AWS a ser usado para criar os recursos. O `region` especifica a região da AWS onde a instância EC2 será criada. Neste exemplo, a instância EC2 será criada na região `US East (N. Virginia)`.
 
-A terceira seção do código:
+No arquivo `ec2.tf`, você pode adicionar o seguinte código:
 
 ```bash
 resource "aws_instance" "app_server" {
-  ami           = "ami-0fc61db8544a617ed"
+  ami           = "ami-007855ac798b5175e"
   instance_type = "t2.medium"
+  key_name      = <"Chave .pem">
 
   tags = {
     Name = "InstanciaTerraform"
@@ -487,15 +451,17 @@ resource "aws_instance" "app_server" {
 }
 ```
 
-define o recurso a ser criado. No exemplo, é definido um recurso do tipo `aws_instance`, que cria uma instância `EC2`.
+Nesse código ele define o recurso a ser criado. No exemplo, é definido um recurso do tipo `aws_instance`, que cria uma instância `EC2`.
 
-O `ami` especifica a AMI (Amazon Machine Image) a ser usada para criar a instância. Neste exemplo, a AMI é **Amazon Linux 2 AMI (HVM), SSD Volume Type**.
+O `ami` especifica a AMI (Amazon Machine Image) a ser usada para criar a instância. Neste exemplo, a AMI é **Ubuntu Server 22.04 LTS (HVM), SSD Volume Type**.
 
 O `instance_type` especifica o tipo de instância EC2 a ser criado. Neste exemplo, uma instância do tipo `t2.medium` será criada.
 
 O bloco `tags` define tags personalizadas a serem adicionadas à instância EC2. Neste exemplo, apenas uma tag `Name` é definida para a instância EC2 com o valor `"InstanciaTerraform"`.
 
-Para executar o plano de implantação, você precisa executar o seguinte comando:
+O `key_name` especifica o nome da chave SSH a ser usada para se conectar à instância EC2. Lembre-se de que você precisa criar uma chave SSH antes de criar a instância EC2, como foi explicado na seção anterior. No meu caso eu teria que substituir por `key_name = "Chave1"`, que foi o nome da chave que criei na seção anterior.
+
+Pronto apenas com esses dois arquivos você já pode criar uma instância EC2. Para isso, você precisa executar o seguinte comando:
 
 ```bash
 terraform init
@@ -543,68 +509,41 @@ O comando acima irá destruir a instância EC2 criada. Para recriar a instância
 
 ### Conectando o CloudWatch com o Terraform
 
-Para conectar o CloudWatch e criar um alarme `CPUUtilization` com o Terraform, você precisa adicionar o seguinte código ao arquivo `main.tf`:
+Para conectar o CloudWatch e criar um alarme `CPUUtilization` com o Terraform que enviará um e-mail caso um gatilho definido seja acionado, você precisa adicionar o seguinte código ao arquivo `ec2.tf`:
+
 
 ```bash
-# Configura o provedor AWS
-provider "aws" {
-  region = "us-east-1"
-}
-
-# Cria uma instância EC2
-resource "aws_instance" "ec2_instance" {
-  ami           = "ami-0fc61db8544a617ed" # Ubuntu 20.04 LTS
+resource "aws_instance" "app_server" {
+  ami           = "ami-007855ac798b5175e"
   instance_type = "t2.medium"
+  key_name      = <"Chave .pem">
 
   tags = {
-    Name = "Instacia cloudwatch"
+    Name = "InstanciaTerraform"
   }
 }
 
-# Cria uma política do IAM para conceder permissão ao CloudWatch
-resource "aws_iam_policy" "cw_policy" {
-  name = "ec2-cw-policy"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = [
-          "cloudwatch:GetMetricStatistics",
-          "cloudwatch:DescribeAlarms",
-          "cloudwatch:PutMetricAlarm"
-        ]
-        Effect   = "Allow"
-        Resource = "*"
-      }
-    ]
-  })
+resource "aws_sns_topic" "sns_topic" {
+  name = "my_sns_topic"
 }
 
-# Cria uma role do IAM para ser usada pela instância EC2
-resource "aws_iam_role" "ec2_role" {
-  name = "ec2-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
-  })
+resource "aws_sns_topic_subscription" "sns_topic_subscription" {
+  topic_arn = aws_sns_topic.sns_topic.arn
+  protocol  = "email"
+  endpoint  = <"EMAIL A SER SUBSTITUÍDO`">
 }
+```
 
-# Associa a política e a role do IAM à instância EC2
-resource "aws_iam_role_policy_attachment" "ec2_policy_attachment" {
-  policy_arn = aws_iam_policy.cw_policy.arn
-  role       = aws_iam_role.ec2_role.name
-}
+O código acima cria um tópico SNS e uma assinatura de tópico SNS. O tópico SNS é usado para enviar notificações por e-mail quando um alarme do CloudWatch é acionado. A assinatura do tópico SNS especifica o endereço de e-mail para o qual as notificações serão enviadas. Lembre-se de substituir o valor do parâmetro `endpoint` pelo seu endereço de e-mail.
 
+::: warning Aviso
+Lembrando que você irá receber um e-mail para confirmar a assinatura do tópico SNS. Para confirmar, basta clicar no link enviado para o seu e-mail.
+:::
+
+
+Agora, você pode adicionar o seguinte código ao arquivo `cloudwatch.tf`:
+
+```bash
 # Configura o CloudWatch para monitorar a utilização da CPU da instância EC2
 resource "aws_cloudwatch_metric_alarm" "ec2_cpu_alarm" {
   alarm_name          = "CPU Utilization Alarm"
@@ -619,10 +558,199 @@ resource "aws_cloudwatch_metric_alarm" "ec2_cpu_alarm" {
   insufficient_data_actions = []
 
   dimensions = {
-    InstanceId = aws_instance.ec2_instance.id
+    InstanceId = aws_instance.app_server.id
   }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
 }
 ```
+
+O código acima cria um alarme do CloudWatch que monitora a utilização da CPU da instância EC2. O alarme é acionado quando a utilização da CPU é maior ou igual a 70% por 1 período de avaliação de 5 minutos. Quando o alarme é acionado, ele envia uma notificação por e-mail para o endereço de e-mail especificado na assinatura do tópico SNS.
+
+Para testar você pode entrar no console da AWS e aumentar a utilização da CPU da instância EC2, como foi explicado anteriormente. Quando a utilização da CPU atingir 70%, você receberá um e-mail informando que o alarme foi acionado.
+
+Para adicionar os outros alarmes, você precisa adicionar o seguinte código ao arquivo `cloudwatch.tf`:
+
+```bash
+# Configura o CloudWatch para monitorar a utilização da CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_alarm" {
+  alarm_name          = "CPU Utilization Alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "70"
+  alarm_description   = "This metric monitors EC2 CPU utilization."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o crédito de CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_credit_balance_alarm" {
+    alarm_name = "CPU Credit Balance Alarm"
+    comparison_operator = "LessThanOrEqualToThreshold"
+    evaluation_periods = "1"
+    metric_name = "CPUCreditBalance"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Minimum"
+    threshold = "10"
+    alarm_description = "This metric monitors the CPU credit balance of the EC2 instance."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o uso de crédito de CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_credit_usage_alarm" {
+alarm_name = "CPU Credit Usage Alarm"
+comparison_operator = "GreaterThanThreshold"
+evaluation_periods = "1"
+metric_name = "CPUCreditUsage"
+namespace = "AWS/EC2"
+period = "300"
+statistic = "Maximum"
+threshold = "80"
+alarm_description = "This metric monitors the CPU credit usage of the EC2 instance."
+insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o status de verificação da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_read_bytes_alarm" {
+    alarm_name = "Disk Read Bytes Alarm"
+    comparison_operator = "GreaterThanThreshold"
+    evaluation_periods = "1"
+    metric_name = "DiskReadBytes"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Sum"
+    threshold = "100000000"
+    alarm_description = "This metric monitors the disk read bytes of the EC2 instance."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o status de verificação da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_read_ops_alarm" {
+    alarm_name = "Disk Read Operations Alarm"
+    comparison_operator = "GreaterThanThreshold"
+    evaluation_periods = "1"
+    metric_name = "DiskReadOps"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Sum"
+    threshold = "100"
+    alarm_description = "This metric monitors the disk read operations of the EC2 instance."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar a escrita em disco da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_write_bytes_alarm" {
+  alarm_name          = "Disk Write Bytes Alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "DiskWriteBytes"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 disk write bytes."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o tráfego de entrada na instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_network_in_alarm" {
+  alarm_name          = "Network In Alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkIn"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 network in traffic."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o tráfego de saída na instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_network_out_alarm" {
+  alarm_name          = "Network Out Alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkOut"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 network out traffic."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+````
+
 
 ## Referências
 
