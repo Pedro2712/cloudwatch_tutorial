@@ -1,26 +1,44 @@
-/* :root {
-    --vp-c-brand: #ff440d;
-    --vp-c-brand-light: #ff6d37;
-    --vp-c-brand-lighter: #ff6d37;
-    --vp-c-brand-dark: #f02b06;
-    --vp-c-brand-darker: #f02b06;
-    --vp-c-brand-accent: #ef4444;
+:root {
+    --vp-c-brand: #4285f4; /* Azul */
+    --vp-c-brand-light: #64b5f6; /* Azul claro */
+    --vp-c-brand-lighter: #90caf9; /* Azul mais claro */
+    --vp-c-brand-dark: #1565c0; /* Azul escuro */
+    --vp-c-brand-darker: #0d47a1; /* Azul mais escuro */
+    --vp-c-brand-accent: #22ff82; /* Laranja */
 
     --vp-home-hero-name-color: transparent;
     --vp-home-hero-name-background: -webkit-linear-gradient(120deg, var(--vp-c-brand), var(--vp-c-brand-accent));
     --vp-home-hero-image-filter: blur(6rem);
-} */
 
-/* ::selection {
-    background-color: rgba(255 68 13 / .75);
-} */
+}
 
-.vp-doc > div > p:before {
-    content: '';
-    margin-left: 1.25rem;    
+::selection {
+    background-color: rgba(66, 133, 244, 0.75); /* Azul */
+}
+
+img, video, iframe {
+	border-radius: .25rem;
+}
+
+iframe {
+    max-width: 100%;
 }
 
 main .VPHero {
     padding-left: 0 !important;
     padding-right: 0 !important;
+}
+
+.aside-curtain {
+    display: none;
+}
+
+.vp-doc table {
+    min-width: 100%;
+    display: table;
+}
+
+.vp-doc > div > p:before {
+    content: '';
+    margin-left: 1.25rem;    
 }

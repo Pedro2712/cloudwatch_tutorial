@@ -1,5 +1,15 @@
-# Porjeto de CloudWatch e CloudTrail - Monitoramento e auditoria de recursos na nuvem AWS
+---
+title: Projeto de CloudWatch e CloudTrail
+sidebar: true
+hero: true
+---
 
+<VPDocHero
+    class="VPDocHero"
+    name="Cloudwatch e Cloudtrail"
+    text="Monitoramento e auditoria de recursos na nuvem AWS"
+    tagline="2023"
+/>
 
 ## Contexto do projeto
 
@@ -755,13 +765,80 @@ resource "aws_cloudwatch_metric_alarm" "ec2_network_out_alarm" {
 }
 ````
 
+### Configurando o CloudTrail
+
+A configuração do CloudTrail é feita através do Terraform, onde é criado um bucket S3 para armazenar os logs do CloudTrail e uma política de acesso para o CloudTrail. Para isso é necessário criar um arquivo chamado `cloudtrail.tf` e adicionar o seguinte código:
+
+::: details bucket S3
+O bucket S3 da AWS é um serviço de armazenamento na nuvem para armazenar e gerenciar arquivos e objetos. Ele fornece escalabilidade, durabilidade, segurança e integração com outros serviços da AWS. É usado para armazenar e acessar dados de forma confiável e flexível.
+:::
+
+```bash
+data "aws_caller_identity" "current" {}
+
+resource "aws_cloudtrail" "foobar" {
+  name                          = "teste-terraform-123456789"
+  s3_bucket_name                = aws_s3_bucket.foo.id
+  s3_key_prefix                 = "prefix"
+  include_global_service_events = false
+}
+
+resource "aws_s3_bucket" "foo" {
+  bucket        = "teste-terraform-123456789"
+  force_destroy = true
+}
+
+data "aws_iam_policy_document" "foo" {
+  statement {
+    sid    = "AWSCloudTrailAclCheck"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudtrail.amazonaws.com"]
+    }
+
+    actions   = ["s3:GetBucketAcl"]
+    resources = [aws_s3_bucket.foo.arn]
+  }
+
+  statement {
+    sid    = "AWSCloudTrailWrite"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudtrail.amazonaws.com"]
+    }
+
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.foo.arn}/prefix/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "s3:x-amz-acl"
+      values   = ["bucket-owner-full-control"]
+    }
+  }
+}
+resource "aws_s3_bucket_policy" "foo" {
+  bucket = aws_s3_bucket.foo.id
+  policy = data.aws_iam_policy_document.foo.json
+}
+```
+
+Esse código cria um bucket S3, define uma política que permite que o CloudTrail acesse e escreva objetos no bucket e associa essa política ao bucket. Isso permite que o CloudTrail armazene registros de eventos em um bucket S3 especificado.
+
+::: warning Aviso
+Caso der algum erro ao executar o comando `terraform apply` para criar o CloudTrail, execute o comando `terraform destroy` para destruir o CloudTrail e altere o nome do bucket S3 no arquivo `cloudtrail.tf` para um nome que ainda não foi utilizado.
+:::
 
 ## Referências
 
 - [CloudWatch](https://aws.amazon.com/pt/cloudwatch/)
 - [CloudWatch CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - [Terraform](https://developer.hashicorp.com/terraform/downloads)
-- [cloudtrail terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudtrail)
+- [Cloudtrail Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudtrail)
 
 <style scoped>
     .image-center {

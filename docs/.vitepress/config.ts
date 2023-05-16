@@ -12,6 +12,8 @@ export default defineConfig({
       { text: 'Examples', link: '/contextualizacao' }
     ],
 
+    
+
     sidebar: [
       {
         text: 'Examples',

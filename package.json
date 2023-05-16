@@ -11,13 +11,15 @@
     "docs:build": "vitepress build docs",
     "docs:serve": "vitepress serve docs"
   },
-   "devDependencies": {
-	"markdown-it-footnote": "^3.0.3",
-	"markdown-it-katex": "^2.0.3",
-	"vitepress": "^1.0.0-alpha.29",
-	"vue": "^3.2.45"
+  "devDependencies": {
+    "markdown-it-footnote": "^3.0.3",
+    "markdown-it-katex": "^2.0.3",
+    "vitepress": "^1.0.0-alpha.29",
+    "vue": "^3.2.45"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "medium-zoom": "^1.0.8"
+  }
 }
-

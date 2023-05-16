@@ -1,6 +1,8 @@
 ---
 # https://vitepress.dev/reference/default-theme-home-page
-layout: home
+title: Início
+layout: home-doc
+sidebar: false
 
 hero:
   name: "Computação em nuvem"
