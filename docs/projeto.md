@@ -11,18 +11,6 @@ hero: true
     tagline="2023"
 />
 
-## Contexto do projeto
-
-CloudWatch e CloudTrail são serviços da AWS (Amazon Web Services) que oferecem recursos para monitoramento e auditoria de recursos na nuvem.
-
-O Amazon CloudWatch é um serviço de monitoramento que coleta e processa dados em tempo real, permitindo monitorar recursos da AWS, aplicativos personalizados e serviços. Com ele, é possível configurar alarmes para notificações baseadas em métricas específicas, monitorar logs de aplicativos, detectar e solucionar problemas, além de tomar ações automatizadas em resposta a mudanças nos recursos monitorados.
-
-Já o Amazon CloudTrail é um serviço que registra todas as atividades realizadas em uma conta da AWS, incluindo ações realizadas pelo usuário, acesso aos recursos e alterações de configuração. Ele permite auditar as ações de usuários e serviços da AWS, rastrear alterações de recursos e garantir a conformidade com políticas de segurança e auditoria.
-
-Com o objetivo de monitorar e auditar recursos na nuvem, este projeto tem como objetivo configurar duas instâncias em regiões diferentes para enviar logs para instâncias distintas do CloudWatch. As informações serão capturadas e redirecionadas ao usuário por meio do CloudTrail.
-
-Com essas informações, o usuário poderá monitorar e auditar os recursos da AWS, garantindo a segurança, o desempenho e a eficiência de ambientes em nuvem. Além disso, ele poderá criar gráficos e dashboards para visualizar os dados de monitoramento e auditoria e criar alarmes para notificações baseadas em métricas específicas.
-
 ## Objetivos
 
 - Configurar duas instâncias em regiões diferentes para enviar logs para instâncias distintas do CloudWatch.
@@ -53,7 +41,9 @@ Com essas informações, o usuário poderá monitorar e auditar os recursos da A
 6. Acesse o CloudWatch e crie um alarme para cada instância.
 7. Acesse o CloudTrail e visualize os logs de auditoria.
 
-### Criação de instâncias EC2
+# Dashboard
+
+### Criando instâncias EC2
 
 Para criar as instâncias EC2, é necessário acessar o [console da AWS](https://console.aws.amazon.com/console/home) e realizar o login em sua conta. Em seguida, acesse o serviço EC2 e selecione a opção "Launch Instance", que pode estar indicada em inglês ou em português, como "Executar instância". Vale notar que por padrão a região selecionada é a `Leste dos EUA (Norte da Virgínia)`, mas é possível alterar a região no canto superior direito da tela. Para este projeto, vamos criar duas instâncias em regiões diferentes, então é importante selecionar uma região diferente para cada instância.
 
@@ -61,13 +51,9 @@ Para criar as instâncias EC2, é necessário acessar o [console da AWS](https:/
 Para acessar o serviço EC2, é possível pesquisar por "EC2" no campo de busca do console da AWS ou navegar até a seção "Compute" e selecionar a opção "EC2".
 :::
 
-<figure class="image-center">
-    <a href="">
-        <img title="Features image" alt="Alt text" src="/image/executar_instancia.png">
-    </a>
-    <figcaption>Botão de criação da instância</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/executar_instancia.png" title="Features image" alt="Features image">
+    <div class="image-center">Botão de criação da instância</div>
+</ImgZoom>
 
 Ao clicar no botão de criação da instância, será aberta uma nova janela com as opções de configuração da instância. Nessa janela, é possível selecionar a imagem da máquina, o tipo de instância, o tamanho do armazenamento, a rede, as configurações de segurança, entre outras opções.
 
@@ -103,13 +89,10 @@ Na quarta aba, você deve escolher um par de chaves para acessar a instância. P
 
 Para criar um novo par de chaves, siga esses simples passos. Clique no botão **Criar par de chaves** e uma nova aba será aberta. Digite um nome para o par de chaves e clique novamente no botão **Criar par de chaves**. O arquivo `.pem` será baixado para o seu computador, contendo a chave privada do par de chaves. Essa chave é necessária para acessar a instância via SSH.
 
-<figure class="image-center">
-    <a href="">
-        <img title="Par de chaves" alt="Alt text" src="/image/par_chaves.png">
-    </a>
-    <figcaption>Criação do Par de chaves</figcaption>
-    <br>
-</figure>
+
+<ImgZoom src="/image/par_chaves.png" title="Par de chaves"  alt="Par de chaves">
+    <div class="image-center">Criação do Par de chaves</div>
+</ImgZoom>
 
 ::: details Chaves de acesso na AWS
 As chaves de acesso são pares de chaves criptográficas que permitem acessar instâncias EC2 na AWS. Elas são compostas por uma chave pública e uma chave privada. A chave pública é usada para criptografar dados e a chave privada é usada para descriptografar dados. As chaves de acesso são usadas para autenticar o acesso às instâncias EC2 e são necessárias para acessar as instâncias via SSH. As chaves de acesso são gerenciadas pelo serviço EC2 e podem ser criadas, importadas, exportadas e excluídas por meio do 
@@ -126,23 +109,15 @@ Na sexta aba, você pode adicionar armazenamento à instância. Neste projeto, v
 
 Oficialmente, a instância está sendo criada. E quando terminar de ser criada, você verá a seguinte tela:
 
-<figure class="image-center">
-    <a href="">
-        <img title="Instância criada" alt="Alt text" src="/image/criacao_instancia.png">
-    </a>
-    <figcaption>Instância criada</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/criacao_instancia.png" title="Instância criada" alt="Instância criada">
+    <div class="image-center">Instância criada</div>
+</ImgZoom>
 
 Ao clicar no botão **Visualizar todas as instâncias**, você será redirecionado para a página de instâncias, onde poderá ver a instância que acabou de criar.
 
-<figure class="image-center">
-    <a href="">
-        <img title="Instâncias" alt="Alt text" src="/image/instancias.png">
-    </a>
-    <figcaption>Conjuto de todas as instâncias criadas em uma região</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/instancias.png" title="Instâncias"  alt="Instâncias">
+    <div class="image-center">Conjuto de todas as instâncias criadas em uma região</div>
+</ImgZoom>
 
 Nessa página, você pode visualizar todas as instâncias que estão sendo executadas na sua conta AWS. As informações incluem o nome da instância, o tipo de instância, o estado atual, o endereço IP público e privado, a zona de disponibilidade, o VPC, o grupo de segurança, o nome do par de chaves, o proprietário, o AMI usado para criar a instância, o tipo de armazenamento raiz, o tamanho do armazenamento, o status do monitoramento, o status de otimização EBS, o status de verificação de status e o status de verificação de sistema. Essas informações são úteis para gerenciar e monitorar suas instâncias em tempo real, permitindo que você tome decisões informadas sobre seu ambiente de nuvem.
 
@@ -164,13 +139,9 @@ Agora que temos duas instâncias criadas, vamos acessá-las via SSH. Para isso, 
 
 Ao clicar nele será exibida uma janela com os comandos que devem ser executados no terminal para acessar a instância via SSH.
 
-<figure class="image-center">
-    <a href="">
-        <img title="Comandos do ssh" alt="Alt text" src="/image/comandos_ssh.png">
-    </a>
-    <figcaption>Aba de comandos para acessar a instância via SSH</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/comandos_ssh.png" title="Comandos do ssh" alt="Comandos do ssh">
+    <div class="image-center">Aba de comandos para acessar a instância via SSH</div>
+</ImgZoom>
 
 O primeiro comando:
 
@@ -228,23 +199,15 @@ Lembre-se de que é importante ter as permissões corretas na sua conta da AWS p
 Para as métricas que iremos monitorar, não é necessário que o agente do CloudWatch agent esteja instalado na instância. Porém, para métricas mais específicas, como por exemplo, métricas de disco, é necessário que o agente do CloudWatch esteja instalado na instância.
 :::
 
-<figure class="image-center">
-    <a href="">
-        <img title="Comandos do CloudWatch" alt="Alt text" src="/image/aba_cloudwatch.png">
-    </a>
-    <figcaption>Aba de criação e configuração do CloudWatch</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/aba_cloudwatch.png" title="Comandos do CloudWatch" alt="Comandos do CloudWatch">
+    <div class="image-center">Aba de criação e configuração do CloudWatch</div>
+</ImgZoom>
 
 Nela você pode criar e configurar os recursos do CloudWatch. Para criar um recurso, basta clicar no botão **Criar alarme**. Ao clicar nele será exibida uma janela com as opções de recursos que podem ser criados. Para criar um painel de monitoramento de instâncias, selecione a opção **Selecionar métrica**.
 
-<figure class="image-center">
-    <a href="">
-        <img title="aba metrica" alt="Alt text" src="/image/aba_metrica.png">
-    </a>
-    <figcaption>Aba de criação da métrica</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/aba_metrica.png" title="Aba metrica"  alt="aba metrica">
+    <div class="image-center">Aba de criação da métrica</div>
+</ImgZoom>
 
 Ao clicar nessa opção, será exibida uma janela com as opções de métricas que podem ser monitoradas. Vamos configurar a métrica para monitorar o CPU, portanto selecione a opção **EC2**, em seguida, selecione a opção **Métricas por instância** e por fim, selecione ou pesquise a opção **CPUCreditBalance** e clique em **Selecionar métrica**.
 
@@ -284,23 +247,15 @@ stress --cpu 2 --timeout 1200
 
 Após executar o comando, você pode acessar o serviço CloudWatch e verificar que o consumo de CPU da instância ultrapassou 80% por 5 minutos, ao ultrapassar esse valor você irá notar que aparecerá um alarme na página de alarmes do CloudWatch e você receberá um e-mail com o alarme.
 
-<figure class="image-center">
-    <a href="">
-        <img title="simbolo alarme" alt="Alt text" src="/image/alarme_ativo.png">
-    </a>
-    <figcaption>Símbolo com o alarme ativado</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/alarme_ativo.png" title="Símbolo alarme" alt="simbolo alarme">
+    <div class="image-center">Símbolo com o alarme ativado</div>
+</ImgZoom>
 
 O email que você receberá será parecido com o email abaixo:
 
-<figure class="image-center">
-    <a href="">
-        <img title="email alarme" alt="Alt text" src="/image/email_alarme.png">
-    </a>
-    <figcaption>Email com o alarme</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/email_alarme.png" title="email alarme" alt="email alarme">
+    <div class="image-center">Email com o alarme</div>
+</ImgZoom>
 
 Agora que você já sabe como criar um alarme, você pode criar alarmes para monitorar outros recursos da AWS, como por exemplo, o consumo de memória da instância, o consumo de armazenamento da instância, o consumo de CPU do banco de dados, o consumo de memória do banco de dados, etc.
 
@@ -477,7 +432,7 @@ Caso você não tenha uma chave SSH, você pode acessar o [AWS Console](https://
 
 Pronto apenas com esses dois arquivos você já pode criar uma instância EC2. Para isso, você precisa executar o seguinte comando:
 
-```bash
+```bash.image-center
 terraform init
 ```
 
@@ -505,13 +460,9 @@ O comando acima irá solicitar que você confirme a aplicação das alterações
 
 Se tudo ocorreu bem, você irá conseguir visualizar a instância EC2 criada no console da AWS.
 
-<figure class="image-center">
-    <a href="">
-        <img title="Instance Terraform" alt="Alt text" src="/image/instance_terraform.png">
-    </a>
-    <figcaption>Instância criada pelo terraform</figcaption>
-    <br>
-</figure>
+<ImgZoom src="/image/instance_terraform.png" title="Instance Terraform" alt="Instance Terraform">
+    <div class="image-center">Instância criada pelo terraform</div>
+</ImgZoom>
 
 Para destruir a instância EC2 criada, você precisa executar o seguinte comando:
 
@@ -551,7 +502,7 @@ resource "aws_sns_topic_subscription" "sns_topic_subscription" {
 O código acima cria um tópico SNS e uma assinatura de tópico SNS. O tópico SNS é usado para enviar notificações por e-mail quando um alarme do CloudWatch é acionado. A assinatura do tópico SNS especifica o endereço de e-mail para o qual as notificações serão enviadas. Lembre-se de substituir o valor do parâmetro `endpoint` pelo seu endereço de e-mail.
 
 ::: warning Aviso
-Lembrando que você irá receber um e-mail para confirmar a assinatura do tópico SNS. Para confirmar, basta clicar no link enviado para o seu e-mail.
+Lembrando que você irá receber um e-mail para confirmar a assinatura do tópico SNS. Para confirmar, basta .image-centerclicar no link enviado para o seu e-mail.
 :::
 
 

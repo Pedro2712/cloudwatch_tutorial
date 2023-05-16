@@ -11,11 +11,12 @@ hero: true
     tagline="2023"
 />
 
+CloudWatch e CloudTrail são serviços da AWS (Amazon Web Services) que oferecem recursos para monitoramento e auditoria de recursos na nuvem.
 
-CloudWatch e CloudTrail são serviços oferecidos pela AWS (Amazon Web Services) que oferecem recursos de monitoramento e auditoria de recursos na nuvem.
+O Amazon CloudWatch é um serviço de monitoramento que coleta e processa dados em tempo real, permitindo monitorar recursos da AWS, aplicativos personalizados e serviços. Com ele, é possível configurar alarmes para notificações baseadas em métricas específicas, monitorar logs de aplicativos, detectar e solucionar problemas, além de tomar ações automatizadas em resposta a mudanças nos recursos monitorados.
 
-O Amazon CloudWatch é um serviço de monitoramento que permite monitorar recursos da AWS, aplicativos personalizados e serviços em tempo real. Ele coleta e processa dados de monitoramento em tempo real, como métricas de desempenho e logs de aplicativos. Com o CloudWatch, é possível configurar alarmes para notificações baseadas em métricas específicas, monitorar logs de aplicativos, detectar e solucionar problemas e tomar ações automatizadas em resposta a mudanças em recursos monitorados.
+Já o Amazon CloudTrail é um serviço que registra todas as atividades realizadas em uma conta da AWS, incluindo ações realizadas pelo usuário, acesso aos recursos e alterações de configuração. Ele permite auditar as ações de usuários e serviços da AWS, rastrear alterações de recursos e garantir a conformidade com políticas de segurança e auditoria.
 
-Já o Amazon CloudTrail é um serviço que permite registrar todas as atividades realizadas em uma conta da AWS, incluindo ações realizadas pelo usuário, acesso aos recursos e alterações de configuração. Com o CloudTrail, é possível auditar ações de usuários e serviços da AWS, rastrear alterações de recursos e garantir a conformidade com políticas de segurança e auditoria.
+Com o objetivo de monitorar e auditar recursos na nuvem, este projeto tem como objetivo configurar duas instâncias em regiões diferentes para enviar logs para instâncias distintas do CloudWatch. As informações serão capturadas e redirecionadas ao usuário por meio do CloudTrail.
 
-Em resumo, CloudWatch é usado para monitorar recursos e aplicativos na nuvem, enquanto CloudTrail é usado para auditar e rastrear atividades na conta da AWS. Ambos são essenciais para garantir a segurança, o desempenho e a eficiência de ambientes em nuvem.
+Com essas informações, o usuário poderá monitorar e auditar os recursos da AWS, garantindo a segurança, o desempenho e a eficiência de ambientes em nuvem. Além disso, ele poderá criar gráficos e dashboards para visualizar os dados de monitoramento e auditoria e criar alarmes para notificações baseadas em métricas específicas.
