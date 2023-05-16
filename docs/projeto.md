@@ -794,13 +794,9 @@ Caso der algum erro ao executar o comando `terraform apply` para criar o CloudTr
 <style scoped>
     .image-center {
         text-align:center;
-        font-size: 13px;
+        font-size: 16px;
         font-weight: bold;
         font-style: italic;
-    }
-    .image-center img {
-        display: block;
-        margin: 0 auto;
     }
 
 </style>
