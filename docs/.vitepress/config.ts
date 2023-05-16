@@ -2,6 +2,7 @@ import { defineConfig } from 'vitepress'
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
+  base: '/cloudwatch_tutorial/',
   lang: 'pt-BR',
   title: "Cloudwatch",
   description: "This website will teach you how to set up two instances in different regions that will send logs to different CloudWatch instances. This information will be captured and redirected to the user by CloudTrail.",
