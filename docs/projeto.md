@@ -461,6 +461,10 @@ O bloco `tags` define tags personalizadas a serem adicionadas à instância EC2.
 
 O `key_name` especifica o nome da chave SSH a ser usada para se conectar à instância EC2. Lembre-se de que você precisa criar uma chave SSH antes de criar a instância EC2, como foi explicado na seção anterior. No meu caso eu teria que substituir por `key_name = "Chave1"`, que foi o nome da chave que criei na seção anterior.
 
+::: tip Dica
+Caso você não tenha uma chave SSH, você pode acessar o [AWS Console](https://console.aws.amazon.com/ec2/v2/home?#KeyPairs:sort=keyName) e criar uma clicando no botão `Criar par de chaves`. Ele te dará uma chave SSH que você pode usar para se conectar à instância EC2.
+:::
+
 Pronto apenas com esses dois arquivos você já pode criar uma instância EC2. Para isso, você precisa executar o seguinte comando:
 
 ```bash
@@ -757,6 +761,7 @@ resource "aws_cloudwatch_metric_alarm" "ec2_network_out_alarm" {
 - [CloudWatch](https://aws.amazon.com/pt/cloudwatch/)
 - [CloudWatch CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - [Terraform](https://developer.hashicorp.com/terraform/downloads)
+- [cloudtrail terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudtrail)
 
 <style scoped>
     .image-center {
