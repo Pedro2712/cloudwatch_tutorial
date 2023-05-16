@@ -432,7 +432,7 @@ Caso você não tenha uma chave SSH, você pode acessar o [AWS Console](https://
 
 Pronto apenas com esses dois arquivos você já pode criar uma instância EC2. Para isso, você precisa executar o seguinte comando:
 
-```bash.image-center
+```bash
 terraform init
 ```
 
