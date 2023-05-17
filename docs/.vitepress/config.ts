@@ -26,7 +26,7 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/Pedro2712' }
+      { icon: 'github', link: 'https://github.com/Pedro2712/cloudwatch_tutorial' }
     ],
 
     outline: 'deep',

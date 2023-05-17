@@ -279,6 +279,8 @@ Nesse projeto iremos utilizar as seguintes métricas do CloudWatch:
 
 Agora que você ja sabe criar alarmes para monitorar os recursos da AWS, você pode criar esses mesmos alarmes para a outra instância que você criou em uma outra região.
 
+
+
 # Estruturando com o Terraform
 
 Terraform é uma ferramenta de infraestrutura como código (IaC) criada pela HashiCorp. Ela permite que você gerencie sua infraestrutura como código, o que significa que você pode definir, implantar e atualizar sua infraestrutura usando arquivos de configuração declarativos. Esses arquivos descrevem a configuração da infraestrutura necessária para executar seus aplicativos, incluindo servidores, redes, balanceadores de carga, bancos de dados e outros recursos em nuvem.
