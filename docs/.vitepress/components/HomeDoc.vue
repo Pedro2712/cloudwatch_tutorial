@@ -76,11 +76,12 @@ const { frontmatter } = useData()
     margin-top: var(--vp-nav-height) !important;
 }
 .VPHomeDocTeamPage {
-  margin-top: 24px;
-  padding-bottom: 64px !important;
+  margin-top: 2px;
+  /* padding-bottom: 6px !important; */
+  margin-right: 600px;
 }
 
 .VPFeature .title {
-  font-size: 1.5rem;
+  font-size: 1rem;
 }
 </style>
