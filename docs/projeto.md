@@ -416,6 +416,19 @@ resource "aws_instance" "app_server" {
     Name = "InstanciaTerraform"
   }
 }
+
+resource "aws_security_group" "security" {
+  name        = "security"
+  description = "Security Group"
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }  
+}
 ```
 
 Nesse código ele define o recurso a ser criado. No exemplo, é definido um recurso do tipo `aws_instance`, que cria uma instância `EC2`.
@@ -427,6 +440,8 @@ O `instance_type` especifica o tipo de instância EC2 a ser criado. Neste exempl
 O bloco `tags` define tags personalizadas a serem adicionadas à instância EC2. Neste exemplo, apenas uma tag `Name` é definida para a instância EC2 com o valor `"InstanciaTerraform"`.
 
 O `key_name` especifica o nome da chave SSH a ser usada para se conectar à instância EC2. Lembre-se de que você precisa criar uma chave SSH antes de criar a instância EC2, como foi explicado na seção anterior. No meu caso eu teria que substituir por `key_name = "Chave1"`, que foi o nome da chave que criei na seção anterior.
+
+O bloco `resource` define um recurso a ser criado. No exemplo, é definido um recurso do tipo `aws_security_group`, que cria um grupo de segurança. O grupo de segurança é usado para controlar o tráfego de entrada e saída da instância EC2. O grupo de segurança criado neste exemplo permite o tráfego de entrada na porta `22` (SSH).
 
 ::: tip Dica
 Caso você não tenha uma chave SSH, você pode acessar o [AWS Console](https://console.aws.amazon.com/ec2/v2/home?#KeyPairs:sort=keyName) e criar uma clicando no botão `Criar par de chaves`. Ele te dará uma chave SSH que você pode usar para se conectar à instância EC2.
