@@ -279,6 +279,14 @@ Nesse projeto iremos utilizar as seguintes métricas do CloudWatch:
 
 Agora que você ja sabe criar alarmes para monitorar os recursos da AWS, você pode criar esses mesmos alarmes para a outra instância que você criou em uma outra região.
 
+### Configurando o CloudTrail
+
+Para configurar o CloudTrail, acesse o serviço CloudTrail e clique na opção **Criar trilha**. Na página que abrir, digite um nome para a trilha e em seguida clique em **Próximo**. Na próxima página, você pode selecionar as opções que deseja monitorar. Para esse projeto, selecione a opção **Todos os eventos de leitura de dados** e em seguida clique em **Próximo**. Na próxima página, você pode selecionar o destino dos logs. Para esse projeto, selecione a opção **Enviar logs para o CloudWatch Logs** e em seguida clique em **Próximo**. Na próxima página, você pode selecionar as opções de criptografia dos logs. Para esse projeto, deixe a opção **Não criptografar** e em seguida clique em **Próximo**. Na próxima página, você pode selecionar as opções de gerenciamento de acesso. Para esse projeto, deixe a opção **Criar uma nova função** e em seguida clique em **Próximo**. Na próxima página, você pode selecionar as opções de tags. Para esse projeto, deixe a opção **Não adicionar tags** e em seguida clique em **Próximo**. Na próxima página, você pode revisar as configurações da trilha e em seguida clique em **Criar trilha**.
+
+Agora que a trilha foi criada, você pode acessar o serviço CloudTrail e clicar na opção **Trilhas** no menu lateral esquerdo. Nessa página você poderá ver todas as trilhas que você criou. Para ver os detalhes de uma trilha, basta clicar no nome dela. Ao clicar no nome da trilha, você será redirecionado para uma página com os detalhes da trilha. Nessa página você poderá ver o status da trilha e o destino dos logs.
+
+Para testar a trilha, você pode acessar a instância e executar um comando que leia um arquivo, como por exemplo, o comando **cat**. Após executar o comando, você pode acessar o serviço CloudTrail e verificar que o comando foi registrado nos logs.
+
 
 
 # Estruturando com o Terraform
@@ -512,7 +520,7 @@ resource "aws_sns_topic" "sns_topic" {
 resource "aws_sns_topic_subscription" "sns_topic_subscription" {
   topic_arn = aws_sns_topic.sns_topic.arn
   protocol  = "email"
-  endpoint  = <"EMAIL A SER SUBSTITUÍDO`">
+  endpoint  = <"EMAIL A SER SUBSTITUÍDO">
 }
 ```
 
@@ -731,9 +739,646 @@ resource "aws_cloudwatch_metric_alarm" "ec2_network_out_alarm" {
     aws_sns_topic.sns_topic.arn
   ]
 }
-````
+```
+
+### Configurando a segunda instância EC2
+
+Do mesmo modo que foi feito com a primeira instância EC2, é necessário criar um `provider` para identificar cada região da AWS e criar um arquivo chamado `ec2` para configurar qual tipo de S.O (Sistema Operacional), potência da máquina entre outros parâmetros que a nova instância vai adquirir.
+
+Por tanto, detro do arquivo `provider.tf` adicione o seguinte código:
+
+```bash
+provider "aws" {
+  alias = "east-2"
+  region  = "us-east-2"
+}
+```
+
+Dessa forma o arquivo deve ficar da seguinte forma:
+
+```bash
+provider "aws" {
+  region  = "us-east-1"
+}
+
+provider "aws" {
+  alias = "east-2"
+  region  = "us-east-2"
+}
+```
+
+Como já foi explicado antes a opção `region` é para identificar a região da AWS, e a opção `alias` é para identificar o nome da região, para futuras configurações no Terraform.
+
+Agora no arquivo `ec2.tf` adicione o seguinte código:
+
+```bash
+resource "aws_instance" "app_server_east_2" {
+  provider      = aws.east-2
+  ami           = "ami-0a695f0d95cefc163"
+  instance_type = "t2.medium"
+  key_name      = "Chave2"
+
+  tags = {
+    Name = "InstanciaTerraform_2"
+  }
+}
+```
+
+Dessa forma o arquivo deve ficar da seguinte forma:
+
+```bash
+resource "aws_instance" "app_server" {
+  ami           = "ami-007855ac798b5175e"
+  instance_type = "t2.medium"
+  key_name      = "Chave1"
+
+  tags = {
+    Name = "InstanciaTerraform_1"
+  }
+}
+
+resource "aws_instance" "app_server_east_2" {
+  provider      = aws.east-2
+  ami           = "ami-0a695f0d95cefc163"
+  instance_type = "t2.medium"
+  key_name      = "Chave2"
+
+  tags = {
+    Name = "InstanciaTerraform_2"
+  }
+}
+
+resource "aws_security_group" "security" {
+  name        = "security"
+  description = "Security Group"
+
+  ingress {
+    description = "HTTPS"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }  
+}
+
+resource "aws_sns_topic" "sns_topic" {
+  name = "my_sns_topic"
+}
+
+resource "aws_sns_topic_subscription" "sns_topic_subscription" {
+  topic_arn = aws_sns_topic.sns_topic.arn
+  protocol  = "email"
+  endpoint  = "pedroa3@al.insper.edu.br"
+}
+```
+
+Note que diferentemente da primeira instância EC2, a segunda instância EC2 está sendo criada na região `us-east-2`, pois adicionamos a variável `provider` referencindo o **alias** criado anteriormente e o nome da chave é `Chave2`, a qual foi criada na região `us-east-2`. Perceba também que o `ami` é diferente, pois cada região da AWS possui um `ami` diferente, mesmo que seja o mesmo S.O.
+
+Agora para configurar o CloudWatch para monitorar o tráfego de entrada e saída da segunda instância EC2, é necessário adicionar no arquivo chamado `cloudwatch.tf`:
+
+```bash
+# Configurando o CloudWatch para monitorar a utilização de memória da instância EC2 da região us-east-2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_alarm_east_2" {
+  alarm_name          = "CPU Utilization Alarm East 2"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "70"
+  alarm_description   = "This metric monitors EC2 CPU utilization in us-east-2."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server_east_2.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o crédito de CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_credit_balance_alarm_east_2" {
+    alarm_name = "CPU Credit Balance Alarm East 2"
+    comparison_operator = "LessThanOrEqualToThreshold"
+    evaluation_periods = "1"
+    metric_name = "CPUCreditBalance"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Minimum"
+    threshold = "10"
+    alarm_description = "This metric monitors the CPU credit balance of the EC2 instance in us-east-2."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server_east_2.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o uso de crédito de CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_credit_usage_alarm_east_2" {
+alarm_name = "CPU Credit Usage Alarm East 2"
+comparison_operator = "GreaterThanThreshold"
+evaluation_periods = "1"
+metric_name = "CPUCreditUsage"
+namespace = "AWS/EC2"
+period = "300"
+statistic = "Maximum"
+threshold = "80"
+alarm_description = "This metric monitors the CPU credit usage of the EC2 instance in us-east-2."
+insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server_east_2.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o status de verificação da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_read_bytes_alarm_east_2" {
+    alarm_name = "Disk Read Bytes Alarm East 2"
+    comparison_operator = "GreaterThanThreshold"
+    evaluation_periods = "1"
+    metric_name = "DiskReadBytes"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Sum"
+    threshold = "100000000"
+    alarm_description = "This metric monitors the disk read bytes of the EC2 instance in us-east-2."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server_east_2.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o status de verificação da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_read_ops_alarm_east_2" {
+    alarm_name = "Disk Read Operations Alarm East 2"
+    comparison_operator = "GreaterThanThreshold"
+    evaluation_periods = "1"
+    metric_name = "DiskReadOps"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Sum"
+    threshold = "100"
+    alarm_description = "This metric monitors the disk read operations of the EC2 instance in us-east-2."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server_east_2.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar a escrita em disco da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_write_bytes_alarm_east_2" {
+  alarm_name          = "Disk Write Bytes Alarm East 2"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "DiskWriteBytes"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 disk write bytes in us-east-2."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server_east_2.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o tráfego de entrada na instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_network_in_alarm_east_2" {
+  alarm_name          = "Network In Alarm East 2"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkIn"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 network in traffic in us-east-2."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server_east_2.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o tráfego de saída na instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_network_out_alarm_east_2" {
+  alarm_name          = "Network Out Alarm East 2"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkOut"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 network out traffic in us-east-2."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server_east_2.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+```
+
+Dessa forma o arquivo completo deve ficar assim:
+
+```bash
+# Configura o CloudWatch para monitorar a utilização da CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_alarm" {
+  alarm_name          = "CPU Utilization Alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "70"
+  alarm_description   = "This metric monitors EC2 CPU utilization."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o crédito de CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_credit_balance_alarm" {
+    alarm_name = "CPU Credit Balance Alarm"
+    comparison_operator = "LessThanOrEqualToThreshold"
+    evaluation_periods = "1"
+    metric_name = "CPUCreditBalance"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Minimum"
+    threshold = "10"
+    alarm_description = "This metric monitors the CPU credit balance of the EC2 instance."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o uso de crédito de CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_credit_usage_alarm" {
+alarm_name = "CPU Credit Usage Alarm"
+comparison_operator = "GreaterThanThreshold"
+evaluation_periods = "1"
+metric_name = "CPUCreditUsage"
+namespace = "AWS/EC2"
+period = "300"
+statistic = "Maximum"
+threshold = "80"
+alarm_description = "This metric monitors the CPU credit usage of the EC2 instance."
+insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o status de verificação da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_read_bytes_alarm" {
+    alarm_name = "Disk Read Bytes Alarm"
+    comparison_operator = "GreaterThanThreshold"
+    evaluation_periods = "1"
+    metric_name = "DiskReadBytes"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Sum"
+    threshold = "100000000"
+    alarm_description = "This metric monitors the disk read bytes of the EC2 instance."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o status de verificação da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_read_ops_alarm" {
+    alarm_name = "Disk Read Operations Alarm"
+    comparison_operator = "GreaterThanThreshold"
+    evaluation_periods = "1"
+    metric_name = "DiskReadOps"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Sum"
+    threshold = "100"
+    alarm_description = "This metric monitors the disk read operations of the EC2 instance."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar a escrita em disco da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_write_bytes_alarm" {
+  alarm_name          = "Disk Write Bytes Alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "DiskWriteBytes"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 disk write bytes."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o tráfego de entrada na instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_network_in_alarm" {
+  alarm_name          = "Network In Alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkIn"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 network in traffic."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o tráfego de saída na instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_network_out_alarm" {
+  alarm_name          = "Network Out Alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkOut"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 network out traffic."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+###########################################################################################
+
+# Configurando o CloudWatch para monitorar a utilização de memória da instância EC2 da região us-east-2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_alarm_east_2" {
+  alarm_name          = "CPU Utilization Alarm East 2"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "CPUUtilization"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Average"
+  threshold           = "70"
+  alarm_description   = "This metric monitors EC2 CPU utilization in us-east-2."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server_east_2.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o crédito de CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_credit_balance_alarm_east_2" {
+    alarm_name = "CPU Credit Balance Alarm East 2"
+    comparison_operator = "LessThanOrEqualToThreshold"
+    evaluation_periods = "1"
+    metric_name = "CPUCreditBalance"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Minimum"
+    threshold = "10"
+    alarm_description = "This metric monitors the CPU credit balance of the EC2 instance in us-east-2."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server_east_2.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o uso de crédito de CPU da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_cpu_credit_usage_alarm_east_2" {
+alarm_name = "CPU Credit Usage Alarm East 2"
+comparison_operator = "GreaterThanThreshold"
+evaluation_periods = "1"
+metric_name = "CPUCreditUsage"
+namespace = "AWS/EC2"
+period = "300"
+statistic = "Maximum"
+threshold = "80"
+alarm_description = "This metric monitors the CPU credit usage of the EC2 instance in us-east-2."
+insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server_east_2.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o status de verificação da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_read_bytes_alarm_east_2" {
+    alarm_name = "Disk Read Bytes Alarm East 2"
+    comparison_operator = "GreaterThanThreshold"
+    evaluation_periods = "1"
+    metric_name = "DiskReadBytes"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Sum"
+    threshold = "100000000"
+    alarm_description = "This metric monitors the disk read bytes of the EC2 instance in us-east-2."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server_east_2.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar o status de verificação da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_read_ops_alarm_east_2" {
+    alarm_name = "Disk Read Operations Alarm East 2"
+    comparison_operator = "GreaterThanThreshold"
+    evaluation_periods = "1"
+    metric_name = "DiskReadOps"
+    namespace = "AWS/EC2"
+    period = "300"
+    statistic = "Sum"
+    threshold = "100"
+    alarm_description = "This metric monitors the disk read operations of the EC2 instance in us-east-2."
+    insufficient_data_actions = []
+
+    dimensions = {
+        InstanceId = aws_instance.app_server_east_2.id
+    }
+
+    alarm_actions = [
+        aws_sns_topic.sns_topic.arn
+    ]
+}
+
+# Configura o CloudWatch para monitorar a escrita em disco da instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_disk_write_bytes_alarm_east_2" {
+  alarm_name          = "Disk Write Bytes Alarm East 2"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "DiskWriteBytes"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 disk write bytes in us-east-2."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server_east_2.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o tráfego de entrada na instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_network_in_alarm_east_2" {
+  alarm_name          = "Network In Alarm East 2"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkIn"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 network in traffic in us-east-2."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server_east_2.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+
+# Configura o CloudWatch para monitorar o tráfego de saída na instância EC2
+resource "aws_cloudwatch_metric_alarm" "ec2_network_out_alarm_east_2" {
+  alarm_name          = "Network Out Alarm East 2"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "NetworkOut"
+  namespace           = "AWS/EC2"
+  period              = "300"
+  statistic           = "Sum"
+  threshold           = "1048576" # 1MB/s
+  alarm_description   = "This metric monitors EC2 network out traffic in us-east-2."
+  insufficient_data_actions = []
+
+  dimensions = {
+    InstanceId = aws_instance.app_server_east_2.id
+  }
+
+  alarm_actions = [
+    aws_sns_topic.sns_topic.arn
+  ]
+}
+```
+
+Note que os alarmes são configurados para serem as mesmas métricas que foram configurados no da primeira região, porém isso não é obrigatório, você pode configurar as métricas que desejar. Porém os nomes dos alarmes devem ser únicos, ou seja, não podem ser iguais aos alarmes da primeira região. Além disso, em `InstanceID` deve ser adicionado o ID da instância EC2 que foi criada na segunda região.
 
 ### Configurando o CloudTrail
+
+Como o CloudTrail é um serviço global da AWS, não é necessário configurar um CloudTrail para cada região. Para isso, basta configurar o CloudTrail em uma região e ele irá monitorar todas as regiões da AWS.
+
+Como funciona o CloudTrail? O CloudTrail monitora todas as ações que são feitas na sua conta da AWS, como por exemplo, criação de instâncias EC2, criação de buckets S3, criação de alarmes no CloudWatch, etc. Ele armazena essas informações em um bucket S3 e você pode acessar esses logs para verificar o que foi feito na sua conta da AWS. A partir desses logs, você pode criar alarmes personalizados no CloudWatch para monitorar as ações que são feitas na sua conta da AWS, ou, para o nosso caso, monitorar os logs de uma ou mais instâncias EC2 e criar alarmes que não são possíveis de serem criados pelo CloudWatch.
 
 A configuração do CloudTrail é feita através do Terraform, onde é criado um bucket S3 para armazenar os logs do CloudTrail e uma política de acesso para o CloudTrail. Para isso é necessário criar um arquivo chamado `cloudtrail.tf` e adicionar o seguinte código:
 
@@ -801,12 +1446,248 @@ Esse código cria um bucket S3, define uma política que permite que o CloudTrai
 Caso der algum erro ao executar o comando `terraform apply` para criar o CloudTrail, execute o comando `terraform destroy` para destruir o CloudTrail e altere o nome do bucket S3 no arquivo `cloudtrail.tf` para um nome que ainda não foi utilizado.
 :::
 
+Agora precisamos configurar para o CloudWatch logs receber os logs do CloudTrail. Para isso adicione o seguinte código no arquivo `cloudtrail.tf`:
+
+```bash
+resource "aws_cloudwatch_log_group" "cloudtrail_logs" {
+  name = "/aws/instances/InstanciaTerraform_1"
+  retention_in_days = null
+}
+```
+
+Este código cria um grupo de logs no CloudWatch para armazenar os logs do CloudTrail. Certifique-se de que o nome do grupo de logs seja único, pois ele não pode ser alterado após a criação. O parâmetro `retention_in_days` define por quantos dias os logs serão armazenados no CloudWatch. Se o valor for definido como `null`, os logs serão armazenados indefinidamente. Caso tivesse sido definido o valor `7` por exemplo, os logs seriam armazenados por 7 dias.
+
+Agora precisamos criar a regra do evento que irá enviar os logs do CloudTrail para o CloudWatch. Para isso adicione o seguinte código no arquivo `cloudtrail.tf`:
+
+```bash
+resource "aws_cloudwatch_event_rule" "cloudtrail_event_rule" {
+  name        = "InstanciaTerraform_1Rule"
+  description = "Event rule for InstanciaTerraform_1"
+  event_pattern = jsonencode({
+    source      = ["aws.ec2"]
+    detail_type = ["EC2 Instance State-change Notification"]
+    detail      = {
+      state = ["running"]
+      instance-id = [
+        "${aws_instance.app_server.id}",
+        "${aws_instance.app_server_east_2.id}"]
+    }
+  })
+}
+```
+
+Este código cria uma regra de evento no CloudWatch que captura eventos específicos do CloudTrail relacionados à instância EC2 em execução. O nome e a descrição podem ser personalizados conforme necessário. Certifique-se de que os detalhes, como a origem e o tipo de detalhe, estejam corretos para atender aos seus requisitos. O parâmetro `event_pattern` define o filtro de evento que será usado para capturar os eventos do CloudTrail. Neste caso, o filtro captura eventos de alteração de estado da instância EC2 necessáriamente em execução, pois o estado da instância é definido como `running` na aba `state`. Note que o filtro de evento também captura eventos de alteração de estado de instâncias EC2 em execução em outras regiões, pois o parâmetro `instance-id` está definido com o valor `${aws_instance.app_server_east_2.id}` que é o ID da instância EC2 em execução na região `us-east-2`.
+
+Agora precisamos criar o alvo do evento que irá enviar os logs do CloudTrail para o CloudWatch. Para isso adicione o seguinte código no arquivo `cloudtrail.tf`:
+
+```bash
+resource "aws_cloudwatch_event_target" "cloudwatch_event_target" {
+  rule      = aws_cloudwatch_event_rule.cloudtrail_event_rule.name
+  arn       = aws_cloudwatch_log_group.cloudtrail_logs.arn
+  target_id = "s3-destination"
+}
+```
+
+Neste trecho de código, estamos configurando o destino do evento no CloudWatch para a regra de evento específica chamada cloudtrail_event_rule. O destino do evento é definido usando o recurso aws_cloudwatch_event_target.
+
+`rule` é definido como o nome da regra de evento `aws_cloudwatch_event_rule.cloudtrail_event_rule.name`, que deve ser definida anteriormente. Essa regra de evento capturará os eventos específicos que desejamos monitorar.
+`arn` é definido como o **ARN** (Amazon Resource Name) do grupo de logs do `CloudWatch aws_cloudwatch_log_group.cloudtrail_logs.arn`. Essa é a localização onde os eventos capturados serão enviados.
+No `target_id` é definido como **"s3-destination"**. Isso é um identificador único para o destino do evento.
+
+Essa configuração garante que os eventos capturados pela regra de evento sejam enviados para o grupo de logs do CloudWatch especificado.
+
+Agora precisamos criar o filtro métrico para que possamos utilizar todos os dados coletados para criar algum alarme costumizado. Para isso adicione o seguinte código no arquivo `cloudtrail.tf`:
+
+```bash
+resource "aws_cloudwatch_log_metric_filter" "cloudtrail_metric_filter" {
+  name           = "cloudtrail-metric-filter"
+  pattern        = "{$.eventName = \"StopInstances\"}"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail_logs.name
+
+  metric_transformation {
+    name          = "StopInstancesCount"
+    namespace     = "Custom/CloudTrail"
+    value         = "1"
+    default_value = "0"
+  }
+}
+```
+
+Aqui estamos definindo um filtro métrico para os logs do CloudWatch usando o recurso `aws_cloudwatch_log_metric_filter`. Esse filtro nos permite extrair métricas específicas dos logs para fins de monitoramento ou análise.
+
+`name` foi definido como **"cloudtrail-metric-filter"**. Isso é apenas um nome descritivo para o filtro métrico.
+`pattern` é definido como **"{$.eventName = "StopInstances"}"**. Esse é o padrão que usamos para filtrar os eventos específicos que desejamos monitorar. Neste caso, estamos filtrando eventos com o campo **"eventName"** igual a **"StopInstances"**, ou seja, eventos de parada de instâncias.
+`log_group_name` foi definido como `aws_cloudwatch_log_group.cloudtrail_logs.name`, que deve ser o nome do grupo de logs do CloudWatch onde os eventos estão sendo enviados.
+Dentro do recurso `aws_cloudwatch_log_metric_filter`, temos o bloco `metric_transformation`, onde definimos a transformação métrica para o filtro.
+
+`name` é definido como **"StopInstancesCount"**. Esse é o nome da métrica que será extraída dos logs.
+`namespace` é definido como **"Custom/CloudTrail"**. Isso define o namespace no qual a métrica será criada no CloudWatch.
+`value` foi definido como **"1"**. Esse é o valor que será atribuído à métrica sempre que o evento filtrado for encontrado.
+`default_value` é definido como **"0"**. Esse é o valor padrão da métrica caso nenhum evento correspondente seja encontrado.
+
+E finalmente podemos criar o alarme para monitorar a métrica criada. Para isso adicione o seguinte código no arquivo `cloudtrail.tf`:
+
+::: tip Dica
+Provavelmente o mais correto é adicionar o alarme no arquivo `cloudwatch.tf`, mas para fins didáticos e deixar claro que é um alarme feito pelo cloudtrail, vamos deixar tudo no mesmo arquivo.
+:::
+
+```bash
+resource "aws_cloudwatch_metric_alarm" "cloudtrail_alarm" {
+  alarm_name          = "cloudtrail-stop-instances-alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "StopInstancesCount"
+  namespace           = "Custom/CloudTrail"
+  period              = "60"
+  statistic           = "SampleCount"
+  threshold           = "1"
+
+  alarm_description = "CloudTrail Stop Instances Alarm"
+  
+  alarm_actions     = [
+    aws_sns_topic.sns_topic.arn
+    ]
+}
+```
+
+No código passado, estamos configurando um alarme métrico no CloudWatch usando o recurso `aws_cloudwatch_metric_alarm`. Esse alarme será acionado quando certas condições métricas forem atendidas.
+
+`alarm_name` é definido como **"cloudtrail-stop-instances-alarm"**. Este é o nome do alarme métrico.
+`comparison_operator` é definido como **"GreaterThanOrEqualToThreshold"**. Isso indica a comparação que será feita entre o valor da métrica e o limiar definido.
+`evaluation_periods` é definido como **"1"**. Isso especifica quantos períodos de avaliação consecutivos devem atender à condição para que o alarme seja acionado.
+`metric_name` é definido como **"StopInstancesCount"**. Este é o nome da métrica na qual o alarme será baseado.
+`namespace` é definido como **"Custom/CloudTrail"**. Isso define o namespace em que a métrica está localizada no CloudWatch.
+`period` é definido como **"60"**. Isso define o período em segundos em que os dados da métrica são coletados.
+`statistic` é definido como **"SampleCount"**. Isso especifica a estatística que será usada para avaliar a métrica.
+`threshold` é definido como **"1"**. Este é o valor do limiar que a métrica precisa atingir ou exceder para acionar o alarme.
+Além desses parâmetros, temos algumas outras configurações opcionais:
+
+`alarm_description` é definido como **"CloudTrail Stop Instances Alarm"**. Esta é uma descrição opcional para o alarme métrico.
+`alarm_actions` é definido como **[aws_sns_topic.sns_topic.arn]**. Isso define as ações que serão executadas quando o alarme for acionado. Neste caso, está configurado para acionar um tópico SNS específico.
+
+Por tanto, esse código configura um alarme métrico no CloudWatch que será acionado quando a métrica **"StopInstancesCount"** atingir ou exceder o limiar de **1**.
+
+Dessa forma o arquivo `cloudtrail.tf` deve estar assim:
+
+```bash
+data "aws_caller_identity" "current" {}
+
+resource "aws_cloudtrail" "foobar" {
+  name                          = "teste-terraform-123456789"
+  s3_bucket_name                = aws_s3_bucket.foo.id
+  s3_key_prefix                 = "prefix"
+  include_global_service_events = false
+}
+
+resource "aws_s3_bucket" "foo" {
+  bucket        = "teste-terraform-123456789"
+  force_destroy = true
+}
+
+data "aws_iam_policy_document" "foo" {
+  statement {
+    sid    = "AWSCloudTrailAclCheck"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudtrail.amazonaws.com"]
+    }
+
+    actions   = ["s3:GetBucketAcl"]
+    resources = [aws_s3_bucket.foo.arn]
+  }
+
+  statement {
+    sid    = "AWSCloudTrailWrite"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["cloudtrail.amazonaws.com"]
+    }
+
+    actions   = ["s3:PutObject"]
+    resources = ["${aws_s3_bucket.foo.arn}/prefix/AWSLogs/${data.aws_caller_identity.current.account_id}/*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "s3:x-amz-acl"
+      values   = ["bucket-owner-full-control"]
+    }
+  }
+}
+resource "aws_s3_bucket_policy" "foo" {
+  bucket = aws_s3_bucket.foo.id
+  policy = data.aws_iam_policy_document.foo.json
+}
+
+resource "aws_cloudwatch_log_group" "cloudtrail_logs" {
+  name = "/aws/instances/InstanciaTerraform_1"
+  retention_in_days = null
+}
+
+resource "aws_cloudwatch_event_rule" "cloudtrail_event_rule" {
+  name        = "InstanciaTerraform_1Rule"
+  description = "Event rule for InstanciaTerraform_1"
+  event_pattern = jsonencode({
+    source      = ["aws.ec2"]
+    detail_type = ["EC2 Instance State-change Notification"]
+    detail      = {
+      state = ["running"]
+      instance-id = [
+        "${aws_instance.app_server.id}",
+        "${aws_instance.app_server_east_2.id}"]
+    }
+  })
+}
+
+resource "aws_cloudwatch_event_target" "cloudwatch_event_target" {
+  rule      = aws_cloudwatch_event_rule.cloudtrail_event_rule.name
+  arn       = aws_cloudwatch_log_group.cloudtrail_logs.arn
+  target_id = "s3-destination"
+}
+
+resource "aws_cloudwatch_log_metric_filter" "cloudtrail_metric_filter" {
+  name           = "cloudtrail-metric-filter"
+  pattern        = "{$.eventName = \"StopInstances\"}"
+  log_group_name = aws_cloudwatch_log_group.cloudtrail_logs.name
+
+  metric_transformation {
+    name          = "StopInstancesCount"
+    namespace     = "Custom/CloudTrail"
+    value         = "1"
+    default_value = "0"
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "cloudtrail_alarm" {
+  alarm_name          = "cloudtrail-stop-instances-alarm"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = "1"
+  metric_name         = "StopInstancesCount"
+  namespace           = "Custom/CloudTrail"
+  period              = "60"
+  statistic           = "SampleCount"
+  threshold           = "1"
+
+  alarm_description = "CloudTrail Stop Instances Alarm"
+
+  alarm_actions     = [
+    aws_sns_topic.sns_topic.arn
+    ]
+}
+```
+
+Com isso, temos um alarme configurado no CloudWatch que será acionado quando a métrica **StopInstancesCount** atingir ou exceder o limiar de 1. Quando o alarme for acionado, ele enviará uma mensagem para o tópico SNS que criamos anteriormente.
+
 ## Referências
 
 - [CloudWatch](https://aws.amazon.com/pt/cloudwatch/)
 - [CloudWatch CLI](https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html)
 - [Terraform](https://developer.hashicorp.com/terraform/downloads)
 - [Cloudtrail Terraform](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudtrail)
+- [CloudWatch Alarm](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/cloudwatch_metric_alarm)
 
 <style scoped>
     .image-center {
