@@ -279,16 +279,6 @@ Nesse projeto iremos utilizar as seguintes métricas do CloudWatch:
 
 Agora que você ja sabe criar alarmes para monitorar os recursos da AWS, você pode criar esses mesmos alarmes para a outra instância que você criou em uma outra região.
 
-### Configurando o CloudTrail
-
-Para configurar o CloudTrail, acesse o serviço CloudTrail e clique na opção **Criar trilha**. Na página que abrir, digite um nome para a trilha e em seguida clique em **Próximo**. Na próxima página, você pode selecionar as opções que deseja monitorar. Para esse projeto, selecione a opção **Todos os eventos de leitura de dados** e em seguida clique em **Próximo**. Na próxima página, você pode selecionar o destino dos logs. Para esse projeto, selecione a opção **Enviar logs para o CloudWatch Logs** e em seguida clique em **Próximo**. Na próxima página, você pode selecionar as opções de criptografia dos logs. Para esse projeto, deixe a opção **Não criptografar** e em seguida clique em **Próximo**. Na próxima página, você pode selecionar as opções de gerenciamento de acesso. Para esse projeto, deixe a opção **Criar uma nova função** e em seguida clique em **Próximo**. Na próxima página, você pode selecionar as opções de tags. Para esse projeto, deixe a opção **Não adicionar tags** e em seguida clique em **Próximo**. Na próxima página, você pode revisar as configurações da trilha e em seguida clique em **Criar trilha**.
-
-Agora que a trilha foi criada, você pode acessar o serviço CloudTrail e clicar na opção **Trilhas** no menu lateral esquerdo. Nessa página você poderá ver todas as trilhas que você criou. Para ver os detalhes de uma trilha, basta clicar no nome dela. Ao clicar no nome da trilha, você será redirecionado para uma página com os detalhes da trilha. Nessa página você poderá ver o status da trilha e o destino dos logs.
-
-Para testar a trilha, você pode acessar a instância e executar um comando que leia um arquivo, como por exemplo, o comando **cat**. Após executar o comando, você pode acessar o serviço CloudTrail e verificar que o comando foi registrado nos logs.
-
-
-
 # Estruturando com o Terraform
 
 Terraform é uma ferramenta de infraestrutura como código (IaC) criada pela HashiCorp. Ela permite que você gerencie sua infraestrutura como código, o que significa que você pode definir, implantar e atualizar sua infraestrutura usando arquivos de configuração declarativos. Esses arquivos descrevem a configuração da infraestrutura necessária para executar seus aplicativos, incluindo servidores, redes, balanceadores de carga, bancos de dados e outros recursos em nuvem.
