@@ -5,9 +5,9 @@ layout: home
 sidebar: false
 
 hero:
-  name: "Computação em nuvem"
-  text: "projeto para a matéria de computação em nuvem"
-  tagline: Configure suas instâncias de forma simples e eficiente com o nosso guia completo de logs e monitoramento na nuvem.
+  name: MonitorEC2 Alert+
+  text: Aplicação de monitoramento
+  tagline: O objetivo é a criação de alarmes para instâncias EC2 em duas regiões distintas com a utilização de CloudWatch e CloudTrail.
   actions:
     - theme: brand
       text: Contextualização
@@ -15,7 +15,7 @@ hero:
     - theme: alt
       text: Projeto
       link: /projeto
-
+  
 members:
   - avatar: 'https://www.github.com/Pedro2712.png'
     name: 'Pedro H. B. A. Andrade'
